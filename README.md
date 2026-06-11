@@ -67,7 +67,7 @@ In RStudio, run:
 btw::btw_mcp_session()
 ```
 
-This lets Claude Code see objects in your current R session. Run this each time you start RStudio, or add it to your `.Rprofile` to run automatically:
+This lets Claude see objects in your current R session. Run this each time you start RStudio, or add it to your `.Rprofile` to run automatically:
 
 ```r
 # Add to ~/.Rprofile
@@ -98,6 +98,41 @@ if (interactive()) btw::btw_mcp_session()
    read the docs for dplyr::filter
    ```
 
+## Optional: Enable btw_tool_run_r
+
+By default, btw only lets Claude inspect your R environment (describe objects, read data frame summaries, look up package docs). Enabling `btw_tool_run_r` lets Claude execute R code directly in your session, such as running functions, generating summaries, fitting models, and more.
+
+This tool is disabled by default for security reasons. See the [btw docs on btw_tool_run_r](https://posit-dev.github.io/btw/reference/btw_tool_run_r.html) for details.
+
+**Important:** The option must be set in the MCP server process, not in your `.Rprofile`. `Rscript` does not load `.Rprofile` (it runs with `--no-init-file` by default), so `options(btw.run_r.enabled = TRUE)` in `.Rprofile` will not be picked up by the MCP server.
+
+### For Claude Code
+
+Remove and re-add the server with the option inlined:
+
+```bash
+claude mcp remove r-btw
+claude mcp add -s "user" r-btw -- Rscript -e "options(btw.run_r.enabled = TRUE); btw::btw_mcp_server()"
+```
+
+### For Claude Desktop
+
+Update the args in your config (`~/Library/Application Support/Claude/claude_desktop_config.json`):
+
+```json
+"r-btw": {
+  "type": "stdio",
+  "command": "Rscript",
+  "args": [
+    "-e",
+    "options(btw.run_r.enabled = TRUE); btw::btw_mcp_server()"
+  ],
+  "env": {}
+}
+```
+
+Restart the client after editing the config.
+
 ## Useful Commands in Claude Code
 
 | Command | Description |
@@ -123,6 +158,9 @@ Make sure you ran `btw::btw_mcp_session()` in your active RStudio session.
 
 **Server not connecting:**
 Check that `Rscript` is on your PATH. Run `which Rscript` in terminal to verify.
+
+**btw_tool_run_r not available:**
+Make sure the option is set in the MCP server config (not just `.Rprofile`) for Claude Code and Claude Desktop. `Rscript` does not load `.Rprofile`, so the option must be inlined in the `-e` argument. After updating the config, restart the client to force it to re-fetch the tool list.
 
 **Want to restart fresh:**
 ```bash
